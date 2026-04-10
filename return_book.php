@@ -19,48 +19,43 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     $issue_id = $_POST['issue_id'] ?? null;
 
-    if ($issue_id) {
+    $stmt = $conn->prepare("
+        UPDATE issued_books 
+        SET return_date = CURDATE()
+        WHERE id = ?
+    ");
 
-        $stmt = $conn->prepare("
-            UPDATE issued_books 
-            SET return_date = CURDATE()
-            WHERE id = ?
-        ");
+    if ($stmt) {
+        $stmt->bind_param("i", $issue_id);
 
-        if ($stmt) {
-            $stmt->bind_param("i", $issue_id);
-
-            if ($stmt->execute()) {
-                $msg = "✅ Book returned successfully!";
-            } else {
-                $msg = "❌ Error: " . $stmt->error;
-            }
-
-            $stmt->close();
+        if ($stmt->execute()) {
+            $msg = "✅ Book returned successfully!";
         } else {
-            $msg = "❌ Prepare failed: " . $conn->error;
+            $msg = "❌ Error: " . $stmt->error;
         }
 
+        $stmt->close();
     } else {
-        $msg = "⚠️ Please select a book.";
+        $msg = "❌ Prepare failed: " . $conn->error;
     }
 }
 
 /* -----------------------
    FETCH ISSUED BOOKS
 ------------------------*/
-$issued = $conn->query("
+$sql = "
     SELECT 
         ib.id,
         b.title,
-        s.name AS student_name
+        ib.student_sid
     FROM issued_books ib
     JOIN books b ON ib.book_id = b.id
-    JOIN students s ON ib.student_id = s.id
     WHERE ib.return_date IS NULL
-");
+";
 
-if (!$issued) {
+$result = $conn->query($sql);
+
+if (!$result) {
     die("❌ SQL Error: " . $conn->error);
 }
 ?>
@@ -72,12 +67,8 @@ if (!$issued) {
     <style>
         body {
             font-family: Arial;
-            background: #f8f9fa;
             margin: 40px;
-        }
-
-        h2 {
-            text-align: center;
+            background: #f8f9fa;
         }
 
         form {
@@ -86,69 +77,53 @@ if (!$issued) {
             padding: 20px;
             background: #fff;
             border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
-        label {
-            font-weight: bold;
-        }
-
-        select {
+        select, input {
             width: 100%;
             padding: 10px;
-            margin: 10px 0;
+            margin-top: 10px;
         }
 
         input[type=submit] {
-            width: 100%;
-            padding: 12px;
             background: #28a745;
             color: white;
             border: none;
             cursor: pointer;
-            font-weight: bold;
-        }
-
-        input[type=submit]:hover {
-            background: #218838;
         }
 
         .msg {
             text-align: center;
-            margin-top: 20px;
+            margin-top: 15px;
             font-weight: bold;
         }
-
-        .error { color: red; }
-        .success { color: green; }
     </style>
 </head>
 <body>
 
-<h2>📘 Return a Book</h2>
+<h2 style="text-align:center;">📥 Return Book</h2>
 
 <form method="POST">
 
     <label>Select Issued Book:</label>
     <select name="issue_id" required>
-        <option value="">-- Choose a Book --</option>
+        <option value="">-- Choose Book --</option>
 
-        <?php while ($row = $issued->fetch_assoc()): ?>
+        <?php while ($row = $result->fetch_assoc()): ?>
             <option value="<?= $row['id'] ?>">
                 <?= htmlspecialchars($row['title']) ?> 
-                (<?= htmlspecialchars($row['student_name']) ?>)
+                (<?= htmlspecialchars($row['student_sid']) ?>)
             </option>
         <?php endwhile; ?>
 
     </select>
 
     <input type="submit" value="Return Book">
+
 </form>
 
 <?php if ($msg): ?>
-    <div class="msg <?= str_starts_with($msg, '❌') || str_starts_with($msg, '⚠️') ? 'error' : 'success' ?>">
-        <?= htmlspecialchars($msg) ?>
-    </div>
+    <p class="msg"><?= htmlspecialchars($msg) ?></p>
 <?php endif; ?>
 
 </body>

@@ -12,23 +12,37 @@ require 'config/db_config.php';
 
 $msg = "";
 
-/* -----------------------
-   ISSUE BOOK
-------------------------*/
+function fetchStudentsFromAPI() {
+
+    $url = "http://localhost/Student-Management-System/api/get_students.php";
+
+    $response = file_get_contents($url);
+
+    if ($response === false) {
+        return [];
+    }
+
+    $data = json_decode($response, true);
+
+    return $data['data'] ?? [];
+}
+
+/* ISSUE BOOK */
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     $book_id = $_POST['book_id'] ?? null;
-    $student_id = $_POST['student_id'] ?? null;
+    $student_sid = $_POST['student_sid'] ?? null;
 
-    if ($book_id && $student_id) {
+    if ($book_id && $student_sid) {
 
         $stmt = $conn->prepare("
-            INSERT INTO issued_books (book_id, student_id, issue_date, return_date)
+            INSERT INTO issued_books (book_id, student_sid, issue_date, return_date)
             VALUES (?, ?, CURDATE(), NULL)
         ");
 
         if ($stmt) {
-            $stmt->bind_param("ii", $book_id, $student_id);
+
+            $stmt->bind_param("is", $book_id, $student_sid);
 
             if ($stmt->execute()) {
                 $msg = "✅ Book issued successfully!";
@@ -46,21 +60,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 }
 
-/* -----------------------
-   FETCH BOOKS
-------------------------*/
+/* BOOKS */
 $books = $conn->query("SELECT id, title FROM books");
-if (!$books) {
-    die("❌ SQL error (books): " . $conn->error);
-}
 
-/* -----------------------
-   FETCH STUDENTS
-------------------------*/
-$students = $conn->query("SELECT id, name FROM students");
-if (!$students) {
-    die("❌ SQL error (students): " . $conn->error);
-}
+/* STUDENTS */
+$students = fetchStudentsFromAPI();
+
 ?>
 
 <!DOCTYPE html>
@@ -68,79 +73,27 @@ if (!$students) {
 <head>
     <title>Issue Book</title>
     <style>
-        body {
-            font-family: Arial;
-            margin: 40px;
-            background-color: #f9f9f9;
-        }
-
-        h2 {
-            text-align: center;
-        }
-
-        form {
-            max-width: 420px;
-            margin: auto;
-            padding: 20px;
-            border-radius: 8px;
-            background: #fff;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        label {
-            display: block;
-            margin-top: 10px;
-            margin-bottom: 6px;
-            font-weight: bold;
-        }
-
-        select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-
-        input[type=submit] {
-            width: 100%;
-            margin-top: 20px;
-            background: #007bff;
-            color: white;
-            padding: 12px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        input[type=submit]:hover {
-            background-color: #0056b3;
-        }
-
-        .msg {
-            text-align: center;
-            margin-top: 20px;
-            font-weight: bold;
-        }
-
-        .error {
-            color: red;
-        }
-
-        .success {
-            color: green;
-        }
+        body { font-family: Arial; margin: 40px; background: #f9f9f9; }
+        form { max-width: 420px; margin: auto; padding: 20px; background: #fff; border-radius: 8px; }
+        label { display:block; margin-top:10px; font-weight:bold; }
+        select, input { width:100%; padding:10px; margin-top:5px; }
+        input[type=submit] { background:#007bff; color:white; border:none; margin-top:20px; cursor:pointer; }
+        input[type=submit]:hover { background:#0056b3; }
+        .msg { text-align:center; margin-top:15px; font-weight:bold; }
+        .error { color:red; }
+        .success { color:green; }
     </style>
 </head>
 <body>
 
-<h2>📚 Issue a Book</h2>
+<h2 style="text-align:center;">📚 Issue a Book</h2>
 
 <form method="POST">
 
+    <!-- BOOK -->
     <label>Select Book:</label>
     <select name="book_id" required>
-        <option value="">-- Choose a Book --</option>
+        <option value="">-- Choose Book --</option>
         <?php while ($row = $books->fetch_assoc()): ?>
             <option value="<?= $row['id'] ?>">
                 <?= htmlspecialchars($row['title']) ?>
@@ -148,14 +101,22 @@ if (!$students) {
         <?php endwhile; ?>
     </select>
 
+    <!-- STUDENT -->
     <label>Select Student:</label>
-    <select name="student_id" required>
+    <select name="student_sid" required>
+
         <option value="">-- Choose Student --</option>
-        <?php while ($row = $students->fetch_assoc()): ?>
-            <option value="<?= $row['id'] ?>">
-                <?= htmlspecialchars($row['name']) ?>
-            </option>
-        <?php endwhile; ?>
+
+        <?php if (!empty($students)): ?>
+            <?php foreach ($students as $row): ?>
+                <option value="<?= $row['sid'] ?>">
+                    <?= htmlspecialchars($row['name']) ?>
+                </option>
+            <?php endforeach; ?>
+        <?php else: ?>
+            <option disabled>No students found (API issue)</option>
+        <?php endif; ?>
+
     </select>
 
     <input type="submit" value="Issue Book">
@@ -163,10 +124,9 @@ if (!$students) {
 </form>
 
 <?php if ($msg): ?>
-    <p class="msg <?= str_starts_with($msg, '❌') || str_starts_with($msg, '⚠️') ? 'error' : 'success' ?>">
-        <?= htmlspecialchars($msg) ?>
-    </p>
+    <div style="max-width:420px;margin:15px auto;text-align:center;">
+        <p class="<?= str_starts_with($msg,'❌') || str_starts_with($msg,'⚠️') ? 'error' : 'success' ?>">
+            <?= htmlspecialchars($msg) ?>
+        </p>
+    </div>
 <?php endif; ?>
-
-</body>
-</html>
