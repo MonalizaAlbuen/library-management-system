@@ -10,7 +10,27 @@ error_reporting(E_ALL);
 
 require 'config/db_config.php';
 
-$result = $conn->query("SELECT * FROM books ORDER BY added_on DESC");
+/* =========================
+   PAGINATION SETUP
+========================= */
+$limit = 5; // books per page
+
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+if ($page < 1) $page = 1;
+
+$offset = ($page - 1) * $limit;
+
+// total records
+$totalResult = $conn->query("SELECT COUNT(*) as total FROM books");
+$totalRow = $totalResult->fetch_assoc();
+$totalBooks = $totalRow['total'];
+
+$totalPages = ceil($totalBooks / $limit);
+
+// fetch paginated data
+$sql = "SELECT * FROM books ORDER BY added_on DESC LIMIT $limit OFFSET $offset";
+$result = $conn->query($sql);
+
 if (!$result) {
     die("❌ SQL Error: " . $conn->error);
 }
@@ -76,6 +96,7 @@ if (!$result) {
         }
     </style>
 </head>
+
 <body>
     <h2>📚 Library Books</h2>
 
@@ -108,6 +129,47 @@ if (!$result) {
         <p class="empty">No books added yet.</p>
     <?php endif; ?>
 
+    <!-- PAGINATION BUTTONS -->
+    <div style="text-align:center; margin-top:20px;">
+
+        <?php if ($page > 1): ?>
+            <a href="?page=<?= $page - 1 ?>" style="
+                margin:5px;
+                padding:8px 12px;
+                background:#007bff;
+                color:white;
+                text-decoration:none;
+                border-radius:5px;">
+                ◀ Prev
+            </a>
+        <?php endif; ?>
+
+        <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+            <a href="?page=<?= $i ?>" style="
+                margin:3px;
+                padding:8px 12px;
+                text-decoration:none;
+                border-radius:5px;
+                <?= ($i == $page) ? 'background:#28a745;color:white;' : 'background:#f1f1f1;color:black;' ?>
+            ">
+                <?= $i ?>
+            </a>
+        <?php endfor; ?>
+
+        <?php if ($page < $totalPages): ?>
+            <a href="?page=<?= $page + 1 ?>" style="
+                margin:5px;
+                padding:8px 12px;
+                background:#007bff;
+                color:white;
+                text-decoration:none;
+                border-radius:5px;">
+                Next ▶
+            </a>
+        <?php endif; ?>
+
+    </div>
+
     <script>
         const searchInput = document.getElementById("searchInput");
         searchInput.addEventListener("keyup", function () {
@@ -120,5 +182,21 @@ if (!$result) {
             });
         });
     </script>
+
+    <!-- BACK TO HOME BUTTON -->
+    <div style="text-align:center; margin-top:20px;">
+        <a href="index.php" style="
+            display:inline-block;
+            padding:10px 18px;
+            background-color:#007bff;
+            color:white;
+            text-decoration:none;
+            border-radius:6px;
+            font-weight:bold;
+        ">
+            🏠 Back to Home
+        </a>
+    </div>
+
 </body>
 </html>

@@ -101,6 +101,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <div class="msg <?= str_starts_with($msg, '❌') || str_starts_with($msg, '⚠️') ? 'error' : '' ?>">
             <?= htmlspecialchars($msg) ?>
         </div>
+
+      <div style="text-align:center; margin-top:20px;">
+    <a href="index.php" style="
+        display:inline-block;
+        padding:10px 18px;
+        background-color:#007bff;
+        color:white;
+        text-decoration:none;
+        border-radius:6px;
+        font-weight:bold;
+    ">
+        🏠 Back to Home
+    </a>
+</div>
     <?php endif; ?>
 </body>
 </html>

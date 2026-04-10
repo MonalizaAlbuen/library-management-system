@@ -24,25 +24,39 @@ function fetchStudentsFromAPI() {
 }
 
 /* -----------------------
-   BUILD STUDENT MAP (SID => FULL NAME)
+   BUILD STUDENT MAP
 ------------------------*/
 $students = fetchStudentsFromAPI();
 
 $studentMap = [];
 
 foreach ($students as $s) {
-    // supports fname + lname format
     if (isset($s['fname']) && isset($s['lname'])) {
         $studentMap[$s['sid']] = $s['fname'] . ' ' . $s['lname'];
-    }
-    // fallback if API uses "name" only
-    else {
+    } else {
         $studentMap[$s['sid']] = $s['name'] ?? 'Unknown Student';
     }
 }
 
 /* -----------------------
-   FETCH ISSUED LOGS
+   PAGINATION SETUP
+------------------------*/
+$limit = 5;
+
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+if ($page < 1) $page = 1;
+
+$offset = ($page - 1) * $limit;
+
+// total records
+$totalResult = $conn->query("SELECT COUNT(*) as total FROM issued_books");
+$totalRow = $totalResult->fetch_assoc();
+$totalLogs = $totalRow['total'];
+
+$totalPages = ceil($totalLogs / $limit);
+
+/* -----------------------
+   FETCH ISSUED LOGS (PAGINATED)
 ------------------------*/
 $sql = "
     SELECT 
@@ -54,6 +68,7 @@ $sql = "
     FROM issued_books ib
     JOIN books b ON ib.book_id = b.id
     ORDER BY ib.id DESC
+    LIMIT $limit OFFSET $offset
 ";
 
 $result = $conn->query($sql);
@@ -117,6 +132,31 @@ if (!$result) {
             color: #555;
             margin-top: 4px;
         }
+
+        .pagination {
+            text-align:center;
+            margin-top:20px;
+        }
+
+        .pagination a {
+            margin:3px;
+            padding:8px 12px;
+            text-decoration:none;
+            border-radius:5px;
+            background:#f1f1f1;
+            color:black;
+            display:inline-block;
+        }
+
+        .pagination a.active {
+            background:#28a745;
+            color:white;
+        }
+
+        .pagination a.nav {
+            background:#007bff;
+            color:white;
+        }
     </style>
 </head>
 <body>
@@ -142,7 +182,6 @@ if (!$result) {
 
         <tr>
             <td><?= $row['id'] ?></td>
-
             <td><?= htmlspecialchars($row['title']) ?></td>
 
             <td>
@@ -151,7 +190,6 @@ if (!$result) {
             </td>
 
             <td><?= $row['issue_date'] ?></td>
-
             <td><?= $row['return_date'] ?? 'Not Returned' ?></td>
 
             <td class="status <?= $row['return_date'] ? 'returned' : 'not-returned' ?>">
@@ -162,6 +200,40 @@ if (!$result) {
     <?php endwhile; ?>
 
 </table>
+
+<!-- PAGINATION -->
+<div class="pagination">
+
+    <?php if ($page > 1): ?>
+        <a class="nav" href="?page=<?= $page - 1 ?>">◀ Prev</a>
+    <?php endif; ?>
+
+    <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+        <a class="<?= ($i == $page) ? 'active' : '' ?>" href="?page=<?= $i ?>">
+            <?= $i ?>
+        </a>
+    <?php endfor; ?>
+
+    <?php if ($page < $totalPages): ?>
+        <a class="nav" href="?page=<?= $page + 1 ?>">Next ▶</a>
+    <?php endif; ?>
+
+</div>
+
+<!-- BACK TO HOME -->
+<div style="text-align:center; margin-top:20px;">
+    <a href="index.php" style="
+        display:inline-block;
+        padding:10px 18px;
+        background-color:#007bff;
+        color:white;
+        text-decoration:none;
+        border-radius:6px;
+        font-weight:bold;
+    ">
+        🏠 Back to Home
+    </a>
+</div>
 
 </body>
 </html>

@@ -13,6 +13,32 @@ require 'config/db_config.php';
 $msg = "";
 
 /* -----------------------
+   FETCH STUDENTS FROM API
+------------------------*/
+function fetchStudentsFromAPI() {
+    $url = "http://localhost/Student-Management-System/api/get_students.php";
+
+    $response = @file_get_contents($url);
+    if ($response === false) return [];
+
+    $data = json_decode($response, true);
+    return $data['data'] ?? [];
+}
+
+$students = fetchStudentsFromAPI();
+
+/* Build SID → Full Name map */
+$studentMap = [];
+
+foreach ($students as $s) {
+    if (isset($s['fname']) && isset($s['lname'])) {
+        $studentMap[$s['sid']] = $s['fname'] . ' ' . $s['lname'];
+    } else {
+        $studentMap[$s['sid']] = $s['name'] ?? 'Unknown Student';
+    }
+}
+
+/* -----------------------
    RETURN BOOK
 ------------------------*/
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -110,10 +136,17 @@ if (!$result) {
         <option value="">-- Choose Book --</option>
 
         <?php while ($row = $result->fetch_assoc()): ?>
+
+            <?php
+                $sid = $row['student_sid'];
+                $fullName = $studentMap[$sid] ?? 'Unknown Student';
+            ?>
+
             <option value="<?= $row['id'] ?>">
-                <?= htmlspecialchars($row['title']) ?> 
-                (<?= htmlspecialchars($row['student_sid']) ?>)
+                <?= htmlspecialchars($row['title']) ?>
+                (<?= htmlspecialchars($sid) ?> - <?= htmlspecialchars($fullName) ?>)
             </option>
+
         <?php endwhile; ?>
 
     </select>
@@ -125,6 +158,20 @@ if (!$result) {
 <?php if ($msg): ?>
     <p class="msg"><?= htmlspecialchars($msg) ?></p>
 <?php endif; ?>
+
+<div style="text-align:center; margin-top:20px;">
+    <a href="index.php" style="
+        display:inline-block;
+        padding:10px 18px;
+        background-color:#007bff;
+        color:white;
+        text-decoration:none;
+        border-radius:6px;
+        font-weight:bold;
+    ">
+        🏠 Back to Home
+    </a>
+</div>
 
 </body>
 </html>
