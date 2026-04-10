@@ -1,60 +1,43 @@
-# 📚 Library Management System
+🔗 Integration with Student Management System
 
-A full-stack PHP + MySQL web application to manage book inventory, student borrowing activity, returns, and admin access control. Built as part of an academic portfolio, this project demonstrates real-world CRUD operations, secure login, and session-based workflows in a self-contained library system.
+This Library Management System is integrated with the Student Management System through an API to retrieve student data.
 
----
+The API is used in the issue_book.php module, where the system fetches the list of students from the Student Management System. This allows the librarian to select a student when issuing a book.
 
-## 🔧 Features
+Instead of storing duplicate student records in the library database, the system retrieves the student list directly from the Student Management System.
 
-- 🔐 Admin login/logout system (session-based)
-- ➕ Add new books to the inventory
-- 📖 View books with author, genre & date
-- 📦 Issue books to students
-- 📥 Return books and mark as available
-- 📋 View issued logs with real-time status (Issued/Returned)
-- 📊 Dashboard with total, issued & returned book stats
-- 🌓 Dark mode toggle
-- 📱 Mobile responsive layout
-- 🚀 Optional deployment using Ngrok
+##⚙️ How It Works
 
----
+1️⃣ 📡 The Library Management System sends a request to the Student Management System API.
 
-## 🛠️ Tech Stack
+2️⃣ 📄 The API endpoint returns student data in JSON format.
 
-- **Frontend:** HTML, CSS (vanilla)
-- **Backend:** PHP 8.x
-- **Database:** MySQL (via phpMyAdmin)
-- **Local Server:** MAMP (or XAMPP)
-- **Version Control:** Git + GitHub
+3️⃣ 👨‍🎓 The student list is displayed in the Issue Book form.
 
----
+4️⃣ 📚 When a book is issued, it is linked to the selected student.
 
-## 📸 Screenshots
+##📡 API Endpoint Used
+GET /api/get-students.php
 
-> 📌 _Here are a few screenshots to give you a glimpse of the application:_
+📌 This endpoint retrieves student records from the Student Management System and displays them in the Issue Book module (issue_book.php).
 
-### Dashboard
-![Dashboard showing book stats](screenshots/dashboard.png)
+##🔄 System Communication Flow
+🎓 Student Management System
+        ↓
+📡 API (get-students.php)
+        ↓
+📚 Library Management System
+        ↓
+📝 issue_book.php
+        ↓
+👨‍🎓 Book issued to student
 
----
 
-## 🧪 How to Run Locally
+##🔑 Default Login Credentials
 
-1.  Install [MAMP](https://www.mamp.info) or [XAMPP](https://www.apachefriends.org/index.html)
-2.  Clone the repository:
-    ```bash
-    git clone [https://github.com/rxl895/library-management-system.git](https://github.com/rxl895/library-management-system.git)
-    ```
-3.  Move the project folder to your MAMP `htdocs` or XAMPP `htdocs` directory.
-4.  Start Apache & MySQL from MAMP/XAMPP.
-5.  Import the SQL schema from `sql/database.sql` into phpMyAdmin.
-6.  Visit: `http://localhost:8888`
-    (Login with default credentials: `admin` / `admin123` unless changed.)
+Use the following credentials to access the system after installation:
 
-### 🛡️ Admin Credentials
+👤 Username: admin
+🔒 Password: admin123
 
-**Default:**
-```makefile
-Username: admin
-Password: admin123
-
+⚠️ These credentials are provided for demonstration purposes. It is recommended to change the password after installation.
