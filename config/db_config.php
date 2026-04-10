@@ -1,8 +1,8 @@
 <?php
 $servername = "localhost";
 $username = "root";
-$password = "root"; // or "" if no password in MAMP
-$dbname = "library_system"; // Make sure this DB exists in phpMyAdmin
+$password = "";
+$dbname = "library_db";
 
 $conn = new mysqli($servername, $username, $password, $dbname);
 

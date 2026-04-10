@@ -5,17 +5,21 @@ if (!isset($_SESSION['admin'])) {
     exit();
 }
 
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
-
 require 'config/db_config.php';
 
-$result = $conn->query("
-    SELECT ib.id, b.title, ib.student_name, ib.issue_date, ib.return_date, ib.returned
-    FROM issued_books ib
-    JOIN books b ON ib.book_id = b.id
-    ORDER BY ib.issue_date DESC
-");
+$sql = "
+SELECT 
+    ib.id,
+    b.title AS book_title,
+    s.name AS student_name,
+    ib.issue_date,
+    ib.return_date
+FROM issued_books ib
+JOIN books b ON ib.book_id = b.id
+JOIN students s ON ib.student_id = s.id
+";
+
+$result = $conn->query($sql);
 
 if (!$result) {
     die("❌ SQL Error: " . $conn->error);
@@ -25,137 +29,76 @@ if (!$result) {
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Issued Books Log</title>
+    <title>Issued Books Logs</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: Arial;
             margin: 40px;
-            background-color: #f8f9fa;
+            background-color: #f5f5f5;
         }
+
         h2 {
             text-align: center;
-            margin-bottom: 20px;
         }
-        .top-bar {
-            width: 90%;
-            margin: 0 auto 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        .top-bar input {
-            width: 60%;
-            max-width: 400px;
-            padding: 8px;
-            font-size: 16px;
-        }
-        .top-bar a {
-            padding: 10px 15px;
-            background: #28a745;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            margin-top: 10px;
-        }
+
         table {
-            width: 90%;
+            width: 80%;
             margin: auto;
             border-collapse: collapse;
+            background: #fff;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
+
         th, td {
             padding: 12px;
             border: 1px solid #ddd;
             text-align: center;
         }
+
         th {
-            background-color: #007bff;
+            background: #007bff;
             color: white;
         }
+
         tr:nth-child(even) {
-            background-color: #f1f5ff;
+            background: #f2f2f2;
         }
-        tr:hover {
-            background-color: #d8ecff;
-        }
-        .returned {
-            color: green;
-            font-weight: bold;
-        }
-        .issued {
-            color: #e67e22;
-            font-weight: bold;
-        }
+
         .empty {
             text-align: center;
-            font-style: italic;
-            color: #777;
-        }
-        @media (max-width: 600px) {
-            table, th, td {
-                font-size: 13px;
-            }
-            .top-bar {
-                flex-direction: column;
-                gap: 10px;
-            }
-            .top-bar input {
-                width: 100%;
-            }
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
-    <h2>📋 Issued Books Log</h2>
 
-    <div class="top-bar">
-        <input type="text" id="searchInput" placeholder="🔍 Search title, student, or status...">
-        <a href="export_issued_logs.php">⬇️ Download CSV</a>
-    </div>
+<h2>📋 Issued Books Logs</h2>
+
+<table>
+    <tr>
+        <th>ID</th>
+        <th>Book</th>
+        <th>Student</th>
+        <th>Issue Date</th>
+        <th>Return Date</th>
+    </tr>
 
     <?php if ($result->num_rows > 0): ?>
-        <table>
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>📘 Title</th>
-                    <th>👩‍🎓 Student</th>
-                    <th>📅 Issue Date</th>
-                    <th>📆 Return Date</th>
-                    <th>📌 Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php $i = 1; while ($row = $result->fetch_assoc()): ?>
-                    <tr>
-                        <td><?= $i++ ?></td>
-                        <td><?= htmlspecialchars($row['title']) ?></td>
-                        <td><?= htmlspecialchars($row['student_name']) ?></td>
-                        <td><?= $row['issue_date'] ?></td>
-                        <td><?= $row['return_date'] ?? '—' ?></td>
-                        <td class="<?= $row['returned'] ? 'returned' : 'issued' ?>">
-                            <?= $row['returned'] ? 'Returned' : 'Issued' ?>
-                        </td>
-                    </tr>
-                <?php endwhile; ?>
-            </tbody>
-        </table>
+        <?php while ($row = $result->fetch_assoc()): ?>
+            <tr>
+                <td><?= $row['id'] ?></td>
+                <td><?= htmlspecialchars($row['book_title']) ?></td>
+                <td><?= htmlspecialchars($row['student_name']) ?></td>
+                <td><?= $row['issue_date'] ?></td>
+                <td><?= $row['return_date'] ?? 'Not Returned' ?></td>
+            </tr>
+        <?php endwhile; ?>
     <?php else: ?>
-        <p class="empty">No issued books found.</p>
+        <tr>
+            <td colspan="5">No issued books found</td>
+        </tr>
     <?php endif; ?>
+</table>
 
-    <script>
-        const searchInput = document.getElementById("searchInput");
-
-        searchInput.addEventListener("keyup", function () {
-            const filter = searchInput.value.toLowerCase();
-            const rows = document.querySelectorAll("table tbody tr");
-
-            rows.forEach(row => {
-                const text = row.innerText.toLowerCase();
-                row.style.display = text.includes(filter) ? "" : "none";
-            });
-        });
-    </script>
 </body>
 </html>

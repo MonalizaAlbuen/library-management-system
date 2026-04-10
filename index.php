@@ -7,10 +7,33 @@ if (!isset($_SESSION['admin'])) {
 
 require 'config/db_config.php';
 
-// Stats Queries
-$totalBooks = $conn->query("SELECT COUNT(*) FROM books")->fetch_row()[0];
-$issuedBooks = $conn->query("SELECT COUNT(*) FROM issued_books WHERE returned = 0")->fetch_row()[0];
-$returnedBooks = $conn->query("SELECT COUNT(*) FROM issued_books WHERE returned = 1")->fetch_row()[0];
+/* ---------------------------
+   SAFE QUERY FUNCTION
+----------------------------*/
+function getCount($conn, $sql) {
+    $result = $conn->query($sql);
+    if ($result) {
+        return $result->fetch_row()[0];
+    }
+    return 0;
+}
+
+/* ---------------------------
+   DASHBOARD STATS
+----------------------------*/
+$totalBooks = getCount($conn, "SELECT COUNT(*) FROM books");
+
+$issuedBooks = getCount($conn, "
+    SELECT COUNT(*) 
+    FROM issued_books 
+    WHERE return_date IS NULL
+");
+
+$returnedBooks = getCount($conn, "
+    SELECT COUNT(*) 
+    FROM issued_books 
+    WHERE return_date IS NOT NULL
+");
 ?>
 
 <!DOCTYPE html>
@@ -122,7 +145,7 @@ $returnedBooks = $conn->query("SELECT COUNT(*) FROM issued_books WHERE returned 
     </style>
 </head>
 <body>
-
+<link rel="stylesheet" href="assets/style.css">
     <nav>
         📚 Library Management System
     </nav>
