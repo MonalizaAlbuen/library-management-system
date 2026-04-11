@@ -38,6 +38,7 @@ GET /api/get-students.php
 Use the following credentials to access the system after installation:
 
 👤 Username: admin
+
 🔒 Password: admin123
 
 ⚠️ These credentials are provided for demonstration purposes. It is recommended to change the password after installation.
