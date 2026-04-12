@@ -9,18 +9,24 @@ The API is used in the issue_book.php module, where the librarian can select a s
 ⚙️ How It Works
 
 1️⃣ 📡 The Library Management System sends a request to the Student Management System API.
+
 2️⃣ 📄 The API returns student data in JSON format.
+
 3️⃣ 👨‍🎓 The student list is displayed in the Issue Book form.
+
 4️⃣ 📚 When a book is issued, it is linked to the selected student record.
 
+
 📡 API Endpoints Used
+
 👨‍🎓 Get Students
-GET /api/get_students.php
+GET http://localhost/Student-Management-System/api/get_students.php
 
 📌 Retrieves student records from the Student Management System for use in the Library System.
 
 📚 Get Issued Books (NEW)
-GET /api/get-issued-books.php
+
+GET http://localhost/library-management-system/api/get-issued-books.php
 
 📌 Retrieves all issued book records with:
 
